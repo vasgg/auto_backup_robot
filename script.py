@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-import asyncio
+from asyncio import sleep
 import zipfile
 
 import paramiko
@@ -64,6 +64,7 @@ async def send_files_to_group():
             )
 
             os.remove(local_file_path)
+            await sleep(1)
 
         except Exception as e:
             print(f"Error with {file_path}: {e}")

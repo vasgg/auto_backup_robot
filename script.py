@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 import asyncio
+import zipfile
+
 import paramiko
 from aiogram import Bot
 from aiogram.types import FSInputFile
@@ -38,8 +40,21 @@ async def send_files_to_group():
 
     for description, file_path in FILES.items():
         try:
+            try:
+                sftp.stat(file_path)
+            except FileNotFoundError:
+                print(f"File {file_path} not found")
+                continue
+
             local_file_path = Path("/tmp") / Path(file_path).name
             sftp.get(file_path, str(local_file_path))
+
+            if local_file_path.suffix == ".db":
+                zip_file_path = local_file_path.with_suffix(".zip")
+                with zipfile.ZipFile(zip_file_path, "w", zipfile.ZIP_DEFLATED) as zipf:
+                    zipf.write(local_file_path, arcname=local_file_path.name)
+                os.remove(local_file_path)
+                local_file_path = zip_file_path
 
             file_to_send = FSInputFile(local_file_path)
             await bot.send_document(
@@ -51,7 +66,7 @@ async def send_files_to_group():
             os.remove(local_file_path)
 
         except Exception as e:
-            print(f"Error occurred while sending {file_path}: {e}")
+            print(f"Error with {file_path}: {e}")
 
     sftp.close()
     ssh.close()

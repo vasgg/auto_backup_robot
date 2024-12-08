@@ -12,12 +12,12 @@ SSH_USER = os.getenv("SSH_USER")
 SSH_KEY_CONTENT = os.getenv("SSH_KEY")
 
 FILES = {
-    "new_praxis": "/pyprojects/vasg/new_praxis_bot/prod_new_praxis_bot.db",
-    "northwest_poker": "/pyprojects/vasg/northwest_poker/prod_northwest_poker.db",
-    "english_buddy": "/pyprojects/english_buddy_bot/prod_english_buddy.db",
-    "seeker_apple": "/pyprojects/keyword_seeker/apple/database.db",
-    "seeker_misha": "/pyprojects/keyword_seeker/misha/database.db",
-    "pole_dance_voter": "/niko_bot/PoleDanceVoter_git/pgbackups/daily/postgres-latest.sql.gz"
+    "new_praxis": "~/pyprojects/vasg/new_praxis_bot/prod_new_praxis_bot.db",
+    "northwest_poker": "~/pyprojects/vasg/northwest_poker/prod_northwest_poker.db",
+    "english_buddy": "~/pyprojects/english_buddy_bot/prod_english_buddy.db",
+    "seeker_apple": "~/pyprojects/keyword_seeker/apple/database.db",
+    "seeker_misha": "~/pyprojects/keyword_seeker/misha/database.db",
+    "pole_dance_voter": "~/niko_bot/PoleDanceVoter_git/pgbackups/daily/postgres-latest.sql.gz"
 }
 
 bot = Bot(token=TELEGRAM_TOKEN)

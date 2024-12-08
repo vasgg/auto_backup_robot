@@ -1,0 +1,10 @@
+[project]
+name = "auto-backup-robot"
+version = "0.1.0"
+description = "auto backup bd dumps with aiogram"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "aiogram>=3.15.0",
+    "paramiko>=3.5.0",
+]

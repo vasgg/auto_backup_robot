@@ -12,8 +12,8 @@ SSH_USER = os.getenv("SSH_USER")
 SSH_KEY_CONTENT = os.getenv("SSH_KEY")
 
 FILES = {
-    "new_praxis": "~/pyprojects/vasg/new_praxis_bot/prod_new_praxis_bot.db",
-    "northwest_poker": "~/pyprojects/vasg/northwest_poker/prod_northwest_poker.db",
+    "new_praxis": "~/drbaloo/pyprojects/vasg/new_praxis_bot/prod_new_praxis_bot.db",
+    "northwest_poker": "/pyprojects/vasg/northwest_poker/prod_northwest_poker.db",
     "english_buddy": "~/pyprojects/english_buddy_bot/prod_english_buddy.db",
     "seeker_apple": "~/pyprojects/keyword_seeker/apple/database.db",
     "seeker_misha": "~/pyprojects/keyword_seeker/misha/database.db",
@@ -51,7 +51,7 @@ async def send_files_to_group():
             os.remove(local_file_path)
 
         except Exception as e:
-            print(f"Ошибка при обработке файла {file_path}: {e}")
+            print(f"Error occurred while sending {file_path}: {e}")
 
     sftp.close()
     ssh.close()

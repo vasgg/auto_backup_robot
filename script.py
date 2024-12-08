@@ -79,6 +79,5 @@ async def send_files_to_group():
 async def main():
     await send_files_to_group()
 
-
 if __name__ == "__main__":
     run(main())

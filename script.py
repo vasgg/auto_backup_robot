@@ -13,7 +13,6 @@ SSH_HOST = os.getenv("SSH_HOST")
 SSH_USER = os.getenv("SSH_USER")
 SSH_KEY_CONTENT = os.getenv("SSH_KEY")
 
-
 FILES = {
     "new_praxis": "/home/drbaloo/pyprojects/vasg/new_praxis_bot/prod_new_praxis_bot.db",
     "northwest_poker": "/home/drbaloo/pyprojects/vasg/northwest_poker/prod_northwest_poker.db",

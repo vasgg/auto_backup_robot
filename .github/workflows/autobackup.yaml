@@ -1,18 +1,19 @@
 name: autobackup
 
 on:
+  workflow_dispatch:
   schedule:
-    - cron: '0 3 * * *'
+    - cron: '0 18 * * *'
 
 jobs:
-  send_backups:
+  send_files:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.12'
@@ -21,12 +22,11 @@ jobs:
         run: |
           pip install aiogram paramiko
 
-      - name: Execute backup script
+      - name: Execute script
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           SSH_HOST: ${{ secrets.SSH_HOST }}
-          SSH_PORT: ${{ secrets.SSH_PORT }}
           SSH_USER: ${{ secrets.SSH_USER }}
           SSH_KEY: ${{ secrets.SSH_KEY }}
         run: python script.py

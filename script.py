@@ -1,4 +1,5 @@
-import os
+from json import loads
+from os import chmod, getenv, path, remove
 from pathlib import Path
 from asyncio import sleep, run
 import zipfile
@@ -7,12 +8,12 @@ import paramiko
 from aiogram import Bot
 from aiogram.types import FSInputFile
 
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-TELEGRAM_CHAT_ID = int(os.getenv("TELEGRAM_CHAT_ID"))
-SSH_HOST = os.getenv("SSH_HOST")
-SSH_USER = os.getenv("SSH_USER")
-SSH_KEY_CONTENT = os.getenv("SSH_KEY")
-FILES = os.getenv("FILES")
+TELEGRAM_TOKEN = getenv("TELEGRAM_TOKEN")
+TELEGRAM_CHAT_ID = int(getenv("TELEGRAM_CHAT_ID"))
+SSH_HOST = getenv("SSH_HOST")
+SSH_USER = getenv("SSH_USER")
+SSH_KEY_CONTENT = getenv("SSH_KEY")
+FILES = loads(getenv("FILES"))
 
 bot = Bot(token=TELEGRAM_TOKEN)
 
@@ -22,7 +23,7 @@ async def send_files_to_group():
     if SSH_KEY_CONTENT:
         with open(ssh_key_path, "w") as key_file:
             key_file.write(SSH_KEY_CONTENT)
-        os.chmod(ssh_key_path, 0o600)
+        chmod(ssh_key_path, 0o600)
 
     ssh = paramiko.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -45,7 +46,7 @@ async def send_files_to_group():
                 zip_file_path = local_file_path.with_suffix(".zip")
                 with zipfile.ZipFile(zip_file_path, "w", zipfile.ZIP_DEFLATED) as zipf:
                     zipf.write(local_file_path, arcname=local_file_path.name)
-                os.remove(local_file_path)
+                remove(local_file_path)
                 local_file_path = zip_file_path
 
             file_to_send = FSInputFile(local_file_path)
@@ -55,7 +56,7 @@ async def send_files_to_group():
                 caption=f"Project: {description}",
             )
 
-            os.remove(local_file_path)
+            remove(local_file_path)
             await sleep(1)
 
         except Exception as e:
@@ -64,8 +65,8 @@ async def send_files_to_group():
     sftp.close()
     ssh.close()
 
-    if os.path.exists(ssh_key_path):
-        os.remove(ssh_key_path)
+    if path.exists(ssh_key_path):
+        remove(ssh_key_path)
 
 
 async def main():

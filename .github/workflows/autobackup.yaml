@@ -1,4 +1,4 @@
-name: autobackup
+name: db-backup-daily-routine
 
 on:
   workflow_dispatch:

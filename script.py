@@ -1,12 +1,14 @@
 from json import loads
+import logging.config
 from os import chmod, getenv, path, remove
 from pathlib import Path
 from asyncio import sleep, run
+from sys import stderr, stdout
+from urllib import parse, request
 import zipfile
+from datetime import datetime
 
-import paramiko
-from aiogram import Bot
-from aiogram.types import FSInputFile
+from paramiko import AutoAddPolicy, SSHClient
 
 TELEGRAM_TOKEN = getenv("TELEGRAM_TOKEN")
 TELEGRAM_CHAT_ID = int(getenv("TELEGRAM_CHAT_ID"))
@@ -15,18 +17,108 @@ SSH_USER = getenv("SSH_USER")
 SSH_KEY_CONTENT = getenv("SSH_KEY")
 FILES = loads(getenv("FILES"))
 
-bot = Bot(token=TELEGRAM_TOKEN)
+
+class CustomFormatter(logging.Formatter):
+    def formatTime(self, record, datefmt=None):
+        ct = datetime.fromtimestamp(record.created).astimezone()
+        if datefmt:
+            base_time = ct.strftime("%d.%m.%Y %H:%M:%S")
+            msecs = f"{int(record.msecs):03d}"
+            tz = ct.strftime("%z")
+            return f"{base_time}.{msecs}{tz}"
+        return super().formatTime(record, datefmt)
 
 
-async def send_files_to_group():
+main_template = {
+    "format": "%(asctime)s | %(message)s",
+    "datefmt": "%d.%m.%Y %H:%M:%S%z",
+}
+error_template = {
+    "format": "%(asctime)s [%(levelname)8s] [%(module)s:%(funcName)s:%(lineno)d] %(message)s",
+    "datefmt": "%d.%m.%Y %H:%M:%S%z",
+}
+
+
+def get_logging_config():
+    return {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "formatters": {
+            "main": {
+                "()": CustomFormatter,
+                "format": main_template["format"],
+                "datefmt": main_template["datefmt"],
+            },
+            "errors": {
+                "()": CustomFormatter,
+                "format": error_template["format"],
+                "datefmt": error_template["datefmt"],
+            },
+        },
+        "handlers": {
+            "stdout": {
+                "class": "logging.StreamHandler",
+                "level": "INFO",
+                "formatter": "main",
+                "stream": stdout,
+            },
+            "stderr": {
+                "class": "logging.StreamHandler",
+                "level": "WARNING",
+                "formatter": "errors",
+                "stream": stderr,
+            },
+        },
+        "loggers": {
+            "root": {
+                "level": "DEBUG",
+                "handlers": ["stdout", "stderr"],
+            },
+        },
+    }
+
+
+logging_config = get_logging_config()
+logging.config.dictConfig(logging_config)
+
+
+def send_document(file_path: Path, caption: str = ""):
+    url = (
+        f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/"
+        f"sendDocument?chat_id={TELEGRAM_CHAT_ID}&caption={parse.quote(caption)}"
+    )
+    with file_path.open("rb") as file:
+        file_data = file.read()
+
+    boundary = "---BOUNDARY---"
+    headers = {
+        "Content-Type": f"multipart/form-data; boundary={boundary}",
+    }
+    data = (
+        (
+            f"--{boundary}\r\n"
+            f'Content-Disposition: form-data; name="document"; filename="{file_path.name}"\r\n'
+            f"Content-Type: application/octet-stream\r\n\r\n"
+        ).encode()
+        + file_data
+        + f"\r\n--{boundary}--\r\n".encode()
+    )
+
+    req = request.Request(url, data=data, headers=headers)
+    with request.urlopen(req) as response:
+        if response.status != 200:
+            raise Exception(f"Error sending document: {response.read().decode()}")
+
+
+async def daily_routine():
     ssh_key_path = "/tmp/script_ssh_key"
     if SSH_KEY_CONTENT:
         with open(ssh_key_path, "w") as key_file:
             key_file.write(SSH_KEY_CONTENT)
         chmod(ssh_key_path, 0o600)
 
-    ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+    ssh = SSHClient()
+    ssh.set_missing_host_key_policy(AutoAddPolicy())
     ssh.connect(SSH_HOST, username=SSH_USER, key_filename=ssh_key_path)
 
     sftp = ssh.open_sftp()
@@ -36,7 +128,7 @@ async def send_files_to_group():
             try:
                 sftp.stat(file_path)
             except FileNotFoundError:
-                print(f"File {file_path} not found")
+                logging.warning(f"File {file_path} not found, skipping...")
                 continue
 
             local_file_path = Path("/tmp") / Path(file_path).name
@@ -49,18 +141,13 @@ async def send_files_to_group():
                 remove(local_file_path)
                 local_file_path = zip_file_path
 
-            file_to_send = FSInputFile(local_file_path)
-            await bot.send_document(
-                TELEGRAM_CHAT_ID,
-                document=file_to_send,
-                caption=f"Project: {description}",
-            )
+            send_document(local_file_path, f"Project: {description}")
 
             remove(local_file_path)
             await sleep(1)
 
         except Exception as e:
-            print(f"Error with {file_path}: {e}")
+            logging.error(f"Error with {file_path}: {e}", exc_info=True)
 
     sftp.close()
     ssh.close()
@@ -70,7 +157,8 @@ async def send_files_to_group():
 
 
 async def main():
-    await send_files_to_group()
+    await daily_routine()
+
 
 if __name__ == "__main__":
     run(main())

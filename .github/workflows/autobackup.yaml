@@ -20,7 +20,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install aiogram paramiko
+          pip install paramiko
 
       - name: Execute script
         env:
